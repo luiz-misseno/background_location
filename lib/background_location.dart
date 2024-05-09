@@ -13,7 +13,7 @@ class BackgroundLocation {
       MethodChannel('com.almoullim.background_location/methods');
 
   /// Stop receiving location updates
-  static stopLocationService() async {
+  static Future stopLocationService() async {
     return await _channel.invokeMethod('stop_location_service');
   }
 
@@ -24,12 +24,17 @@ class BackgroundLocation {
   }
 
   /// Start receiving location updated
-  static startLocationService({double distanceFilter = 0.0, bool forceAndroidLocationManager = false}) async {
-    return await _channel.invokeMethod('start_location_service',
-        <String, dynamic>{'distance_filter': distanceFilter, 'force_location_manager': forceAndroidLocationManager});
+  static Future startLocationService(
+      {double distanceFilter = 0.0,
+      bool forceAndroidLocationManager = false}) async {
+    return await _channel
+        .invokeMethod('start_location_service', <String, dynamic>{
+      'distance_filter': distanceFilter,
+      'force_location_manager': forceAndroidLocationManager
+    });
   }
 
-  static setAndroidNotification(
+  static Future setAndroidNotification(
       {String? title, String? message, String? icon}) async {
     if (Platform.isAndroid) {
       return await _channel.invokeMethod('set_android_notification',
@@ -39,7 +44,7 @@ class BackgroundLocation {
     }
   }
 
-  static setAndroidConfiguration(int interval) async {
+  static Future setAndroidConfiguration(int interval) async {
     if (Platform.isAndroid) {
       return await _channel.invokeMethod('set_configuration', <String, dynamic>{
         'interval': interval.toString(),
@@ -53,26 +58,26 @@ class BackgroundLocation {
   Future<Location> getCurrentLocation() async {
     var completer = Completer<Location>();
 
-    var _location = Location();
     await getLocationUpdates((location) {
-      _location.latitude = location.latitude;
-      _location.longitude = location.longitude;
-      _location.accuracy = location.accuracy;
-      _location.altitude = location.altitude;
-      _location.bearing = location.bearing;
-      _location.speed = location.speed;
-      _location.time = location.time;
+      final _location = Location(
+          latitude: location.latitude,
+          longitude: location.longitude,
+          altitude: location.altitude,
+          accuracy: location.accuracy,
+          bearing: location.bearing,
+          speed: location.speed,
+          time: location.time,
+          isMock: location.isMock);
+
       completer.complete(_location);
     });
 
     return completer.future;
   }
 
-
-
   /// Register a function to recive location updates as long as the location
   /// service has started
-  static getLocationUpdates(Function(Location) location) {
+  static Future<void> getLocationUpdates(Function(Location) location) async {
     // add a handler on the channel to recive updates from the native classes
     _channel.setMethodCallHandler((MethodCall methodCall) async {
       if (methodCall.method == 'location') {
@@ -115,7 +120,7 @@ class Location {
       @required this.time,
       @required this.isMock});
 
-  toMap() {
+  Map<String, Object?> toMap() {
     var obj = {
       'latitude': latitude,
       'longitude': longitude,
